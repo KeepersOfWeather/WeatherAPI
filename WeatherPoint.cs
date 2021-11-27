@@ -2,25 +2,18 @@
 
 public class Metadata
 {
-    public DateTime TimeStamp { get; set; }
+    public DateTime UTCTimeStamp { get; set; }
     public string DeviceID { get; set; }
     public string ApplicationID { get; set; }
     public string GatewayID { get; set; }
 
     public Metadata(DateTime timestamp, string deviceID, string applicationID, string gatewayID)
     {
-        TimeStamp = timestamp;
+        UTCTimeStamp = timestamp;
         DeviceID = deviceID;
         ApplicationID = applicationID;
         GatewayID = gatewayID;
     }
-
-    //Metadata(MySqlConnector.MySqlDataReader reader) {
-    //    TimeStamp = reader.GetDateTime("timestamp");
-    //    DeviceID = reader.GetString("device");
-    //    ApplicationID = reader.GetString("application");
-    //    GatewayID = reader.GetString("gateway");
-    //}
 }
 
 public class Positional

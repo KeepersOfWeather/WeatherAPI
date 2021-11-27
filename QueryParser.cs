@@ -1,17 +1,37 @@
-﻿
+﻿using MySqlConnector;
+
 public class QueryParser
 {
     public static async Task<IEnumerable<WeatherPoint>> Parse(MySqlConnector.MySqlConnection connection , string SQLQuery)
     {
-		await connection.OpenAsync();
+		try
+		{
+			// Try opening
+			await connection.OpenAsync();
+		} 
+		catch (Exception)
+        {
+			// Connection is probably already open, so we should reset connection 
+			await connection.ResetConnectionAsync();
+		}
 
-		using var command = connection.CreateCommand();
+		MySqlDataReader reader;
 
-		command.CommandText = SQLQuery;
+		try
+		{
+			// Try running query
+			using var command = connection.CreateCommand();
 
-		//command.CommandText = @"SELECT * FROM metadata";
+			command.CommandText = SQLQuery;
 
-		using var reader = await command.ExecuteReaderAsync();
+			reader = await command.ExecuteReaderAsync();
+		} catch (Exception ex)
+        {
+			await connection.CloseAsync();
+			Console.WriteLine("Bad SQL query:");
+			Console.WriteLine(ex.Message);
+			return new List<WeatherPoint>();
+		}
 
 		List<WeatherPoint> weatherPoints = new();
 
@@ -55,7 +75,7 @@ public class QueryParser
 				sensorData = new(
 					reader.GetFloat("temperature"),
 					reader.GetFloat("pressure"),
-					reader.GetInt16("light_log_scale")
+					reader.GetInt32("light_log_scale")
 				);
 			}
 			else
@@ -64,8 +84,8 @@ public class QueryParser
 				sensorData = new(
 					reader.GetFloat("temperature"),
 					reader.GetFloat("humidity"),
-					reader.GetInt16("light_lux"),
-					reader.GetInt16("battery_status"),
+					reader.GetInt32("light_lux"),
+					reader.GetInt32("battery_status"),
 					reader.GetFloat("battery_voltage"),
 					reader.GetString("work_mode")
 					);
@@ -80,11 +100,11 @@ public class QueryParser
 			{
 				// It is missing, we use an overload constructer which won't initialise the SNR value
 				transmissionalData = new(
-					reader.GetInt16("rssi"),
-					reader.GetInt16("spreading_factor"),
+					reader.GetInt32("rssi"),
+					reader.GetInt32("spreading_factor"),
 					reader.GetFloat("consumed_airtime"),
-					reader.GetInt16("bandwidth"),
-					reader.GetInt16("frequency")
+					reader.GetInt32("bandwidth"),
+					reader.GetInt32("frequency")
 				);
 
 			}
@@ -92,9 +112,9 @@ public class QueryParser
 			{
 				// It's there
 				transmissionalData = new(
-					reader.GetInt16("rssi"),
+					reader.GetInt32("rssi"),
 					reader.GetFloat("snr"),
-					reader.GetInt16("spreading_factor"),
+					reader.GetInt32("spreading_factor"),
 					reader.GetFloat("consumed_airtime"),
 					reader.GetInt32("bandwidth"),
 					reader.GetInt32("frequency")
@@ -114,5 +134,57 @@ public class QueryParser
 		await connection.CloseAsync();
 
         return weatherPoints;
+	}
+
+	public async static Task<IEnumerable<string>> GetDistinctStringColumn(MySqlConnector.MySqlConnection connection, string SQLQuery)
+    {
+		/// This function should be used when the SQL query returns strings
+		try
+		{
+			// Try opening
+			await connection.OpenAsync();
+		}
+		catch (Exception)
+		{
+			// Connection is probably already open, so we should reset connection 
+			await connection.ResetConnectionAsync();
+		}
+
+		MySqlDataReader reader;
+
+		try
+		{
+			// Try running query
+			using var command = connection.CreateCommand();
+
+			command.CommandText = SQLQuery;
+
+			reader = await command.ExecuteReaderAsync();
+		}
+		catch (Exception ex)
+		{
+			await connection.CloseAsync();
+			Console.WriteLine("Bad SQL query:");
+			Console.WriteLine(ex.Message);
+			return new List<string>();
+		}
+
+		List<string> values = new();
+
+		while (reader.Read())
+		{
+			try
+			{
+				values.Add(reader.GetString(0));
+			} 
+			catch (Exception ex)
+            {
+				Console.WriteLine(ex.Message);
+            }
+		}
+
+		await connection.CloseAsync();
+
+		return values;
 	}
 }
