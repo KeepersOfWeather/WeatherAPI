@@ -178,4 +178,4 @@ app.MapGet("/from-device", async (string id) =>
 
 // TODO: filter endpoint
 
-app.Run();
+app.Run("https://localhost:80");
