@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "uBaJPOjZAkPjKHgR13IENFk8Kny3rMVOugimyOW0IeG8RPQzgAfznjMYNu0/dxjKud290bCh8nOZ7xLRGSQKHQ==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Camiel Verdult\\Desktop\\minimalAPI\\minimalAPI.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Camiel Verdult\\.nuget\\packages\\mysqlconnector\\2.0.0\\mysqlconnector.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
