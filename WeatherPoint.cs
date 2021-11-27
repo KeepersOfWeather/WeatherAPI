@@ -53,17 +53,17 @@ public class SensorData
     public float? Pressure { get; set; }
     public int? BatteryStatus { get; set; }
     public float? BatteryVoltage { get; set; }
-    public string? WordMode { get; set; }
+    public string? WorkMode { get; set; }
 
     public SensorData(float temperature, float humidity, int lightLux, int batteryStatus, 
-        float batteryVoltage, string wordMode)
+        float batteryVoltage, string workMode)
     {
         LightLux = lightLux;
         Temperature = temperature;
         Humidity = humidity;
         BatteryStatus = batteryStatus;
         BatteryVoltage = batteryVoltage;
-        WordMode = wordMode;
+        WorkMode = workMode;
     }
 
     public SensorData(float temperature, float pressure, int lightLog)
