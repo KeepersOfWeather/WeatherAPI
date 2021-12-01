@@ -3,10 +3,10 @@ var app = builder.Build();
 
 var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
-	Server = "db",
-	UserID = "root",
-	Password = "[REDACTED]",
-	Database = "mqtt",
+	Server = Environment.GetEnvironmentVariable("DB_ENDPOINT"),
+	UserID = Environment.GetEnvironmentVariable("DB_USER"),
+	Password = Environment.GetEnvironmentVariable("DB_PASSWORD"),
+	Database = Environment.GetEnvironmentVariable("DB_DB"),
 };
 
 // TODO: Fix possible SQL injections (example: api/from?device="py-wierden; DROP raw_json")
