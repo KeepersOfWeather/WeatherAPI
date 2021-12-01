@@ -3,9 +3,9 @@ var app = builder.Build();
 
 var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
-	Server = "weather.camiel.pw",
+	Server = "db",
 	UserID = "root",
-	Password = "weer123",
+	Password = "[REDACTED]",
 	Database = "mqtt",
 };
 
