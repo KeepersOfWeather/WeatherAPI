@@ -10,6 +10,7 @@ ENV DB_PASSWORD=
 ENV DB_ENDPOINT=
 ENV DB_PORT=
 ENV DB_DB=
+ARG CERT_PASSW=
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
@@ -26,6 +27,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-RUN "dotnet dev-certs https --trust"
+RUN dotnet dev-certs https -ep ${HOME}/.aspnet/https/aspnetapp.pfx -p $CERT_PASSW
+RUN dotnet dev-certs https --trust
 
 ENTRYPOINT ["dotnet", "WeatherAPI.dll"]
