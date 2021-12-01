@@ -9,6 +9,8 @@ var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 	Database = "mqtt",
 };
 
+// TODO: Fix possible SQL injections (example: api/from?device="py-wierden; DROP raw_json")
+
 using var connection = new MySqlConnector.MySqlConnection(db_builder.ConnectionString);
 
 app.MapGet("/", async () =>
@@ -152,7 +154,7 @@ app.MapGet("/since", async (DateTime timestamp) =>
 
 app.MapGet("/devices", async () =>
 {
-	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata");
+return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata");
 });
 
 app.MapGet("/gateways", async () =>
