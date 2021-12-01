@@ -27,7 +27,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-RUN dotnet dev-certs https -ep ${HOME}/.aspnet/https/aspnetapp.pfx -p $CERT_PASSW
-RUN dotnet dev-certs https --trust
-
 ENTRYPOINT ["dotnet", "WeatherAPI.dll"]

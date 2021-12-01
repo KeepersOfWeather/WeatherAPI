@@ -201,4 +201,4 @@ app.MapGet("/from-device", async (int deviceID) =>
 	return await QueryParser.Parse(connection, query);
 });
 
-app.Run("https://localhost:80");
+app.Run("http://localhost:80");
