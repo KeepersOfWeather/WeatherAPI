@@ -136,7 +136,7 @@ public class QueryParser
         return weatherPoints;
 	}
 
-	public async static Task<IEnumerable<string>> GetDistinctStringColumn(MySqlConnector.MySqlConnection connection, string SQLQuery)
+	public async static Task<Dictionary<int, string>> GetDistinctStringColumn(MySqlConnection connection, string SQLQuery)
     {
 		/// This function should be used when the SQL query returns strings
 		try
@@ -166,7 +166,7 @@ public class QueryParser
 			await connection.CloseAsync();
 			Console.WriteLine("Bad SQL query:");
 			Console.WriteLine(ex.Message);
-			return new List<string>();
+			return new Dictionary<int, string>();
 		}
 
 		List<string> values = new();
@@ -185,6 +185,13 @@ public class QueryParser
 
 		await connection.CloseAsync();
 
-		return values;
+		Dictionary<int, string> enum_response = new();
+
+		foreach (var it in values.Select((Value, Index) => new { Value, Index }))
+		{
+			enum_response.Add(it.Index, it.Value);
+		}
+
+		return enum_response;
 	}
 }

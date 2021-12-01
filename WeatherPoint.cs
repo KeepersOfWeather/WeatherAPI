@@ -21,8 +21,6 @@ public class Positional
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public double? Altitude { get; set; }
-    public string CityName { get; set; }
-
     public Positional(double latitude, double longitude, double altitude)
     {
         Latitude = latitude;

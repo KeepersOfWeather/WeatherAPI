@@ -1,12 +1,28 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
+var server = Environment.GetEnvironmentVariable("DB_ENDPOINT");
+var userID = Environment.GetEnvironmentVariable("DB_USER");
+
+var port_str = Environment.GetEnvironmentVariable("DB_PORT");
+
+uint port = 3306; // Default mariaDB port
+
+if (port_str != null)
+{
+	port = uint.Parse(port_str);
+}
+
+var password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var database = Environment.GetEnvironmentVariable("DB_DB");
+
 var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
-	Server = Environment.GetEnvironmentVariable("DB_ENDPOINT"),
-	UserID = Environment.GetEnvironmentVariable("DB_USER"),
-	Password = Environment.GetEnvironmentVariable("DB_PASSWORD"),
-	Database = Environment.GetEnvironmentVariable("DB_DB"),
+	Server = server,
+	UserID = userID,
+	Port = port,
+	Password = password,
+	Database = database,
 };
 
 // TODO: Fix possible SQL injections (example: api/from?device="py-wierden; DROP raw_json")
@@ -95,15 +111,22 @@ app.MapGet("/year", async () =>
 	);
 });
 
-app.MapGet("/average-temp", async (DateTime since, DateTime until, string deviceID) =>
+app.MapGet("/average-temp", async (DateTime since, DateTime until, int deviceID) =>
 {
+	// TODO: sanitise deviceID
+
+	// We use an id mapped to the response from /devices here
+
+	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	var device = all_devices.ElementAt(deviceID);
+
 	var sinceFormatted = since.ToString("yyyy-MM-dd");
 	var untilFormatted = until.ToString("yyyy-MM-dd");
 
 	var query = string.Format(@"SELECT SUM(temperature)/COUNT(temperature) as avr FROM metadata
 	INNER JOIN sensor_data ON metadata.id = sensor_data.id
 	WHERE device = {0} 
-	AND metadata.timestamp BETWEEN {1} AND {2}", deviceID, sinceFormatted, untilFormatted);
+	AND metadata.timestamp BETWEEN {1} AND {2}", device, sinceFormatted, untilFormatted);
 
 	return await QueryParser.Parse(connection, query);
 });
@@ -152,7 +175,7 @@ app.MapGet("/since", async (DateTime timestamp) =>
 
 app.MapGet("/devices", async () =>
 {
-return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata");
+	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 });
 
 app.MapGet("/gateways", async () =>
@@ -165,13 +188,18 @@ app.MapGet("/applications", async () =>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT application FROM metadata");
 });
 
-app.MapGet("/from-device", async (string id) =>
+app.MapGet("/from-device", async (int deviceID) =>
 {
+	// We use an id mapped to the response from /devices here
+
+	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	var device = all_devices.ElementAt(deviceID);
+
 	var query = string.Format(@"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE device = '{0}'", id);
+		WHERE device = '{0}'", device);
 
 	return await QueryParser.Parse(connection, query);
 });
