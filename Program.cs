@@ -5,7 +5,7 @@ var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
 	Server = "db",
 	UserID = "root",
-	Password = "weer123",
+	Password = "[REDACTED]",
 	Database = "mqtt",
 };
 
