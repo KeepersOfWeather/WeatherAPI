@@ -25,8 +25,6 @@ var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 	Database = database,
 };
 
-// TODO: Fix possible SQL injections (example: api/from?device="py-wierden; DROP raw_json")
-
 using var connection = new MySqlConnector.MySqlConnection(db_builder.ConnectionString);
 
 app.MapGet("/", async () =>
@@ -113,9 +111,8 @@ app.MapGet("/year", async () =>
 
 app.MapGet("/average-temp", async (DateTime since, DateTime until, int deviceID) =>
 {
-	// TODO: sanitise deviceID
-
 	// We use an id mapped to the response from /devices here
+	// You can get the id: device list from /devices, then pass the id for the device you want
 
 	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 	var device = all_devices.ElementAt(deviceID);
