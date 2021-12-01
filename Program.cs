@@ -108,8 +108,6 @@ app.MapGet("/average-temp", async (DateTime since, DateTime until, string device
 	return await QueryParser.Parse(connection, query);
 });
 
-
-
 app.MapGet("/date", async (DateTime date) =>
 {
 
@@ -177,7 +175,5 @@ app.MapGet("/from-device", async (string id) =>
 
 	return await QueryParser.Parse(connection, query);
 });
-
-// TODO: filter endpoint
 
 app.Run("https://localhost:80");
