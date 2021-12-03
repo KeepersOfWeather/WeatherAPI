@@ -201,4 +201,48 @@ app.MapGet("/from-device", async (int deviceID) =>
 	return await QueryParser.Parse(connection, query);
 });
 
+app.MapGet("/raw", async (DateTime since) =>
+{
+	/// This function should be used when the SQL query returns strings
+	try
+	{
+		// Try opening
+		await connection.OpenAsync();
+	}
+	catch (Exception)
+	{
+		// Connection is probably already open, so we should reset connection 
+		await connection.ResetConnectionAsync();
+	}
+
+	MySqlConnector.MySqlDataReader reader;
+
+	try
+	{
+		// Try running query
+		using var command = connection.CreateCommand();
+
+		command.CommandText = "SELECT * from raw_json";
+
+		reader = await command.ExecuteReaderAsync();
+	}
+	catch (Exception ex)
+	{
+		await connection.CloseAsync();
+		Console.WriteLine("Bad SQL query:");
+		Console.WriteLine(ex.Message);
+		return new List<JsonContent>();
+	}
+
+	List<JsonContent> raw_messages = new();
+	
+	while (await reader.ReadAsync())
+    {
+		raw_messages.Add(JsonContent.Create(reader.GetString("json")));
+    }
+
+	return raw_messages;
+});
+
+
 app.Run("http://localhost:5000");
