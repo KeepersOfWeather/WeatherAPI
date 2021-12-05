@@ -31,81 +31,81 @@ app.MapGet("/", async () =>
 { 
 	/// Retrieves weather info from last 2 hours
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 HOUR) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 HOUR) AND CURRENT_TIMESTAMP"
 	);
 });
 
 app.MapGet("/hour", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR) AND CURRENT_TIMESTAMP"
 	);
 });
 
 app.MapGet("/today", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE cast(metadata.timestamp as date) = CURDATE()" 
-			// We use CURDATE() instead CURRENT_TIMESTAMP because we only want the date and not time related stuff (timekampf <- Max made me)
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE cast(metadata.timestamp as date) = CURDATE()" 
+		// We use CURDATE() instead CURRENT_TIMESTAMP because we only want the date and not time related stuff (timekampf <- Max made me)
 	);
 });
 
 app.MapGet("/yesterday", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE cast(metadata.timestamp as date) = DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY)"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE cast(metadata.timestamp as date) = DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 DAY)"
 	);
 });
 
 app.MapGet("/week", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 WEEK) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 WEEK) AND CURRENT_TIMESTAMP"
 	);
 });
 
 app.MapGet("/fortnight", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 WEEK) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 WEEK) AND CURRENT_TIMESTAMP"
 	);
 });
 
 app.MapGet("/month", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MONTH) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 MONTH) AND CURRENT_TIMESTAMP"
 	);
 });
 
 app.MapGet("/year", async () =>
 {
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 YEAR) AND CURRENT_TIMESTAMP"
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 YEAR) AND CURRENT_TIMESTAMP"
 	);
 });
 
@@ -121,9 +121,9 @@ app.MapGet("/average-temp", async (DateTime since, DateTime until, int deviceID)
 	var untilFormatted = until.ToString("yyyy-MM-dd");
 
 	var query = string.Format(@"SELECT SUM(temperature)/COUNT(temperature) as avr FROM metadata
-	INNER JOIN sensor_data ON metadata.id = sensor_data.id
-	WHERE device = {0} 
-	AND metadata.timestamp BETWEEN {1} AND {2}", device, sinceFormatted, untilFormatted);
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		WHERE device = {0} 
+		AND metadata.timestamp BETWEEN {1} AND {2}", device, sinceFormatted, untilFormatted);
 
 	return await QueryParser.Parse(connection, query);
 });
@@ -134,10 +134,10 @@ app.MapGet("/date", async (DateTime date) =>
 	var formattedDate = date.ToString("yyyy-MM-dd");
 
 	var query = string.Format(@"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE cast(metadata.timestamp as date) = '{0}'", formattedDate);
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE cast(metadata.timestamp as date) = '{0}'", formattedDate);
 
 	return await QueryParser.Parse(connection, query);
 });
@@ -148,10 +148,10 @@ app.MapGet("/timestamp", async (DateTime timestamp) =>
 	var formattedDate = timestamp.ToString("yyyy-MM-dd HH:mm:ss");
 
 	var query = string.Format(@"SELECT * FROM metadata
-			INNER JOIN positional ON metadata.id = positional.id
-			INNER JOIN sensor_data ON metadata.id = sensor_data.id
-			INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-			WHERE metadata.timestamp = '{0}'", formattedDate);
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE metadata.timestamp = '{0}'", formattedDate);
 
 	return await QueryParser.Parse(connection, query);
 });
@@ -165,7 +165,7 @@ app.MapGet("/since", async (DateTime timestamp) =>
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE metadata.timestamp BETWEEN '{0}' AND CURRENT_TIMESTAMP", formattedDate);
+		WHERE metadata.timestamp BETWEEN '{0}' AND CURRENT_TIMESTAMP ORDER BY metatada.timestamp ASC", formattedDate);
 
 	return await QueryParser.Parse(connection, query);
 });
@@ -196,53 +196,18 @@ app.MapGet("/from-device", async (int deviceID) =>
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE device = '{0}'", device);
+		WHERE device = '{0}' ORDER BY metatada.timestamp DESC", device);
 
 	return await QueryParser.Parse(connection, query);
 });
 
-app.MapGet("/raw", async (DateTime since) =>
+app.MapGet("/latest", async () =>
 {
-	/// This function should be used when the SQL query returns strings
-	try
-	{
-		// Try opening
-		await connection.OpenAsync();
-	}
-	catch (Exception)
-	{
-		// Connection is probably already open, so we should reset connection 
-		await connection.ResetConnectionAsync();
-	}
-
-	MySqlConnector.MySqlDataReader reader;
-
-	try
-	{
-		// Try running query
-		using var command = connection.CreateCommand();
-
-		command.CommandText = "SELECT * from raw_json";
-
-		reader = await command.ExecuteReaderAsync();
-	}
-	catch (Exception ex)
-	{
-		await connection.CloseAsync();
-		Console.WriteLine("Bad SQL query:");
-		Console.WriteLine(ex.Message);
-		return new List<JsonContent>();
-	}
-
-	List<JsonContent> raw_messages = new();
-	
-	while (await reader.ReadAsync())
-    {
-		raw_messages.Add(JsonContent.Create(reader.GetString("json")));
-    }
-
-	return raw_messages;
+	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		ORDER BY metadata.timestamp LIMIT 1");
 });
-
 
 app.Run("http://0.0.0.0:5000");
