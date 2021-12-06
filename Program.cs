@@ -18,11 +18,11 @@ var database = Environment.GetEnvironmentVariable("DB_DB");
 
 var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
-	Server = server,
-	UserID = userID,
-	Port = port,
-	Password = password,
-	Database = database,
+    Server = server,
+    UserID = userID,
+    Port = port,
+    Password = password,
+    Database = database,
 };
 
 using var connection = new MySqlConnector.MySqlConnection(db_builder.ConnectionString);
@@ -200,10 +200,11 @@ app.MapGet("/applications", async () =>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT application FROM metadata");
 });
 
-app.MapGet("/from-device", async (int deviceID) =>
+app.MapGet("/from-device", async(int deviceID, DateTime? since) =>
 {
-    // We use an id mapped to the response the SQL query from /devices would give us
+	// This endpoints returns device data from the last 24 hours by default
 
+    // We use an id mapped to the response the SQL query from /devices would give us
     Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > all_devices.Count()) {
@@ -214,11 +215,16 @@ app.MapGet("/from-device", async (int deviceID) =>
 
 	var device = all_devices[deviceID];
 
+	// since might be null, this makes sure if since is not passed, we take the current UTC time minus two hours
+	DateTime assuredSince = since ?? DateTime.UtcNow.AddHours(-24);
+
+	var formattedTimestamp = assuredSince.ToString("yyyy-MM-dd HH:mm:ss");
+
 	var query = string.Format(@"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE device = '{0}' ORDER BY timestamp DESC", device);
+		WHERE device = '{0}' AND metadata.timestamp BETWEEN '{1}' AND CURRENT_TIMESTAMP ORDER BY timestamp ASC", device, formattedTimestamp);
 
 	// return query;
 
