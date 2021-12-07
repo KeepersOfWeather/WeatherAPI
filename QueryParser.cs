@@ -194,4 +194,63 @@ public class QueryParser
 
 		return enum_response;
 	}
+
+	public async static Task<Dictionary<string, Dictionary<string, float>>> GetDevicesLocations(MySqlConnection connection, string SQLQuery) {
+		/// This function should be used when the SQL query returns strings
+		try
+		{
+			// Try opening
+			await connection.OpenAsync();
+		}
+		catch (Exception)
+		{
+			// Connection is probably already open, so we should reset connection 
+			await connection.ResetConnectionAsync();
+		}
+
+		MySqlDataReader reader;
+
+		try
+		{
+			// Try running query
+			using var command = connection.CreateCommand();
+
+			command.CommandText = SQLQuery;
+
+			reader = await command.ExecuteReaderAsync();
+		}
+		catch (Exception ex)
+		{
+			await connection.CloseAsync();
+			Console.WriteLine("Bad SQL query:");
+			Console.WriteLine(ex.Message);
+			return new Dictionary<string, Dictionary<string, float>>();
+		}
+
+		Dictionary<string, Dictionary<string, float>> locations = new();		
+
+		while (reader.Read())
+		{
+			try
+			{
+				string device = reader.GetString("device");
+				float latitude = reader.GetFloat("latitude");
+				float longitude = reader.GetFloat("longitude");
+
+				Dictionary<string, float> coordinates = new();
+
+				coordinates.Add("latitude", latitude);
+				coordinates.Add("longitude", longitude);
+
+				locations.Add(device, coordinates);
+			} 
+			catch (Exception ex)
+            {
+				Console.WriteLine(ex.Message);
+            }
+		}
+
+		return locations;
+	}
+
 }

@@ -46,7 +46,7 @@ app.MapGet("/hour", async () =>
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE timestamp BETWEEN DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR) AND CURRENT_TIMESTAMP
-		ORDER BY timestamp ASC"
+		ORDER BY timestamp ASC"	
 	);
 });
 
@@ -229,6 +229,28 @@ app.MapGet("/from-device", async(int deviceID, DateTime? since) =>
 	// return query;
 
 	return await QueryParser.Parse(connection, query);
+});
+
+app.MapGet("/device-location", async (int deviceID) =>
+{
+	// We use an id mapped to the response the SQL query from /devices would give us
+    Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	if (deviceID > all_devices.Count()) {
+		// deviceID is out of bounds for our list, return an empty weatherpoint list
+
+		return new List<WeatherPoint>();
+	}
+
+	// Figure out which device name the user specified
+	var device = all_devices[deviceID];
+	
+	var query = string.Format(@"SELECT DISTINCT device, 
+		latitude, longitude FROM positional
+		INNER JOIN metadata ON metadata.id = positional.id
+		WHERE device = '{0}' ORDER BY metadata.timestamp DESC", device);
+
+	return await QueryParser.GetDevicesLocations(connection, query);
 });
 
 app.MapGet("/latest", async () =>
