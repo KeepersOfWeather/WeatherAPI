@@ -250,7 +250,10 @@ app.MapGet("/device-location", async (int deviceID) =>
 		INNER JOIN metadata ON metadata.id = positional.id
 		WHERE device = '{0}' ORDER BY metadata.timestamp DESC", device);
 
-	return await QueryParser.GetDevicesLocations(connection, query);
+	Dictionary<string, Dictionary<string, float>> locations = await QueryParser.GetDevicesLocations(connection, query);
+
+	string googleAPIKey = "AIzaSyAnwm6QWVxb0vwLr40GxT6cj3D-K5yOX94";
+
 });
 
 app.MapGet("/latest", async () =>
