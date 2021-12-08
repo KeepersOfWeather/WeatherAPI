@@ -1,20 +1,31 @@
+using System.Net;
+using System.Text.Json;
+using WeatherAPI;
+
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
 var server = Environment.GetEnvironmentVariable("DB_ENDPOINT");
 var userID = Environment.GetEnvironmentVariable("DB_USER");
 
-var port_str = Environment.GetEnvironmentVariable("DB_PORT");
+var portStr = Environment.GetEnvironmentVariable("DB_PORT");
 
 uint port = 3306; // Default mariaDB port
 
-if (port_str != null)
+if (portStr != null)
 {
-	port = uint.Parse(port_str);
+	port = uint.Parse(portStr);
 }
 
 var password = Environment.GetEnvironmentVariable("DB_PASSWORD");
 var database = Environment.GetEnvironmentVariable("DB_DB");
+
+var geocodeAPIKey = Environment.GetEnvironmentVariable("GCAPIKEY");
+
+if (geocodeAPIKey == null)
+{
+	Console.WriteLine("Geocode API key not provided, location endpoints will not work.");
+}
 
 var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 {
@@ -117,33 +128,7 @@ app.MapGet("/year", async () =>
 	);
 });
 
-app.MapGet("/average-temp", async (DateTime since, DateTime until, int deviceID) =>
-{
-	// We use an id mapped to the response from /devices here
-	// You can get the id: device list from /devices, then pass the id for the device you want
-
-	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
-
-	if (deviceID > all_devices.Count())
-    {
-		// User requested from device that is out of bounds, just send an empty list back
-		return new List<WeatherPoint>();
-    }
-
-	var device = all_devices.ElementAt(deviceID);
-
-	var sinceFormatted = since.ToString("yyyy-MM-dd");
-	var untilFormatted = until.ToString("yyyy-MM-dd");
-
-	var query = string.Format(@"SELECT SUM(temperature)/COUNT(temperature) as avr FROM metadata
-		INNER JOIN sensor_data ON metadata.id = sensor_data.id
-		WHERE device = {0} 
-		AND timestamp BETWEEN {1} AND {2}", device, sinceFormatted, untilFormatted);
-
-	return await QueryParser.Parse(connection, query);
-});
-
-app.MapGet("/on-date", async (DateTime date) =>
+app.MapGet("/on-date/{date}", async (DateTime date) =>
 {
 
 	var formattedDate = date.ToString("yyyy-MM-dd");
@@ -157,7 +142,7 @@ app.MapGet("/on-date", async (DateTime date) =>
 	return await QueryParser.Parse(connection, query);
 });
 
-app.MapGet("/on-timestamp", async (DateTime timestamp) =>
+app.MapGet("/on-timestamp/{timestamp}", async (DateTime timestamp) =>
 {
 
 	var formattedDate = timestamp.ToString("yyyy-MM-dd HH:mm:ss");
@@ -171,7 +156,7 @@ app.MapGet("/on-timestamp", async (DateTime timestamp) =>
 	return await QueryParser.Parse(connection, query);
 });
 
-app.MapGet("/since", async (DateTime timestamp) =>
+app.MapGet("/since/{timestamp}", async (DateTime timestamp) =>
 {
 
 	var formattedDate = timestamp.ToString("yyyy-MM-dd HH:mm:ss");
@@ -200,7 +185,7 @@ app.MapGet("/applications", async () =>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT application FROM metadata");
 });
 
-app.MapGet("/from-device", async(int deviceID, DateTime? since) =>
+app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 {
 	// This endpoints returns device data from the last 24 hours by default
 
@@ -231,29 +216,148 @@ app.MapGet("/from-device", async(int deviceID, DateTime? since) =>
 	return await QueryParser.Parse(connection, query);
 });
 
-app.MapGet("/device-location", async (int deviceID) =>
+app.MapGet("/device/{deviceID}/location", async (int deviceID) =>
 {
-	// We use an id mapped to the response the SQL query from /devices would give us
-    Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
-	if (deviceID > all_devices.Count()) {
+	if (geocodeAPIKey == null)
+    {
+		return new Dictionary<string, string>();
+	}
+
+	// We use an id mapped to the response the SQL query from /devices would give us
+    Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	if (deviceID > allDevices.Count() || allDevices.Count() == 0) {
 		// deviceID is out of bounds for our list, return an empty weatherpoint list
 
-		return new List<WeatherPoint>();
+		return new Dictionary<string, string>();
 	}
 
 	// Figure out which device name the user specified
-	var device = all_devices[deviceID];
+	var device = allDevices[deviceID];
 	
 	var query = string.Format(@"SELECT DISTINCT device, 
 		latitude, longitude FROM positional
 		INNER JOIN metadata ON metadata.id = positional.id
 		WHERE device = '{0}' ORDER BY metadata.timestamp DESC", device);
 
-	Dictionary<string, Dictionary<string, float>> locations = await QueryParser.GetDevicesLocations(connection, query);
+	Dictionary<string, Dictionary<string, double>> locations = await QueryParser.GetDevicesLocations(connection, query);
 
-	string googleAPIKey = "AIzaSyAnwm6QWVxb0vwLr40GxT6cj3D-K5yOX94";
+	Dictionary<string, double> deviceLocation = locations[device];
 
+	string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceLocation["latitude"], deviceLocation["longitude"], geocodeAPIKey);
+
+	HttpClient locationRequest = new();
+
+	Stream responseBody = await locationRequest.GetStreamAsync(apiURL);
+
+	GeocodeResponse.Root geoAPIResponse = await JsonSerializer.DeserializeAsync<GeocodeResponse.Root>(responseBody);
+
+	string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
+
+	Dictionary<string, string> returnData = new();
+
+	returnData.Add(device, cityName);
+
+	return returnData;
+});
+
+app.MapGet("/device/{deviceID}/average-temp", async (int deviceID, DateTime? since, DateTime? until) =>
+{
+	// We use an id mapped to the response from /devices here
+	// You can get the id: device list from /devices, then pass the id for the device you want
+
+	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	if (deviceID > all_devices.Count())
+	{
+		// User requested from device that is out of bounds, just send an empty list back
+		return new Dictionary<string, float>();
+	}
+
+	var device = all_devices[deviceID];
+
+	// Return the average temp from the last hour
+	DateTime sinceEnsured = since ?? DateTime.UtcNow.AddHours(-12);
+	DateTime untilEnsured = until ?? DateTime.UtcNow;
+
+	var sinceFormatted = sinceEnsured.ToString("yyyy-MM-dd HH:mm:ss");
+	var untilFormatted = untilEnsured.ToString("yyyy-MM-dd HH:mm:ss");
+
+	var query = string.Format(@"SELECT SUM(temperature)/COUNT(temperature) as avr FROM metadata
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		WHERE device = '{0}' 
+		AND timestamp BETWEEN '{1}' AND '{2}'", device, sinceFormatted, untilFormatted);
+
+	float averageTemp = await QueryParser.GetSingleFloatColumn(connection, query);
+
+	Dictionary<string, float> returnData = new();
+
+	returnData.Add(device, averageTemp);
+
+	return returnData;
+});
+
+app.MapGet("/devices/locations", async () =>
+{
+
+	if (geocodeAPIKey == null)
+	{
+		return new Dictionary<string, string>();
+	}
+
+	// We use an id mapped to the response the SQL query from /devices would give us
+	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	// Get all devices with their latitude and longitude
+	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
+		connection, @"SELECT DISTINCT device, 
+		latitude, longitude FROM positional
+		INNER JOIN metadata ON metadata.id = positional.id
+		ORDER BY metadata.device DESC");
+
+	// This wil store our device: city entries
+	Dictionary<string, string> deviceCities = new();
+
+	foreach (var deviceLocationEntry in deviceLocations)
+    {
+        string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceLocationEntry.Value["latitude"], deviceLocationEntry.Value["longitude"], geocodeAPIKey);
+
+        HttpClient locationRequest = new();
+
+        Stream responseBody = await locationRequest.GetStreamAsync(apiURL);
+
+        // object parsed = await JsonSerializer.DeserializeAsync<Dictionary<string, object>>(responseBody);
+
+        GeocodeResponse.Root geoAPIResponse = await JsonSerializer.DeserializeAsync<GeocodeResponse.Root>(responseBody);
+
+        string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
+
+		deviceCities.Add(deviceLocationEntry.Key, cityName);
+    }
+
+	return deviceCities;
+});
+
+app.MapGet("/device/{deviceID}/latest", async (int deviceID) =>
+{
+	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	if (deviceID > all_devices.Count())
+	{
+		// User requested from device that is out of bounds, just send an empty list back
+		return new List<WeatherPoint>();
+	}
+
+	string device = all_devices[deviceID];
+
+	string query = string.Format(@"SELECT * FROM metadata
+		INNER JOIN positional ON metadata.id = positional.id
+		INNER JOIN sensor_data ON metadata.id = sensor_data.id
+		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
+		WHERE device = '{0}' and metadata.id = (SELECT max(id) FROM metadata where device = '{1}')", device, device);
+
+	return await QueryParser.Parse(connection, query);
 });
 
 app.MapGet("/latest", async () =>
