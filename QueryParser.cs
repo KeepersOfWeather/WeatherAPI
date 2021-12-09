@@ -194,4 +194,131 @@ public class QueryParser
 
 		return enum_response;
 	}
+
+	public async static Task<float> GetSingleFloatColumn(MySqlConnection connection, string SQLQuery)
+	{
+		/// This function should be used when the SQL query returns strings
+		try
+		{
+			// Try opening
+			await connection.OpenAsync();
+		}
+		catch (Exception)
+		{
+			// Connection is probably already open, so we should reset connection 
+			await connection.ResetConnectionAsync();
+		}
+
+		MySqlDataReader reader;
+
+		try
+		{
+			// Try running query
+			using var command = connection.CreateCommand();
+
+			command.CommandText = SQLQuery;
+
+			reader = await command.ExecuteReaderAsync();
+		}
+		catch (Exception ex)
+		{
+			await connection.CloseAsync();
+			Console.WriteLine("Bad SQL query:");
+			Console.WriteLine(ex.Message);
+			return new float();
+		}
+
+		float value = new();
+
+		while (reader.Read())
+		{
+			try
+			{
+				value = reader.GetFloat(0);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+			}
+		}
+
+		await connection.CloseAsync();
+
+		return value;
+	}
+
+	public async static Task<Dictionary<string, Dictionary<string, double>>> GetDevicesLocations(MySqlConnection connection, string SQLQuery) {
+		/// This function should be used when the SQL query returns strings
+		try
+		{
+			// Try opening
+			await connection.OpenAsync();
+		}
+		catch (Exception)
+		{
+			// Connection is probably already open, so we should reset connection 
+			await connection.ResetConnectionAsync();
+		}
+
+		MySqlDataReader reader;
+
+		try
+		{
+			// Try running query
+			using var command = connection.CreateCommand();
+
+			command.CommandText = SQLQuery;
+
+			reader = await command.ExecuteReaderAsync();
+		}
+		catch (Exception ex)
+		{
+			await connection.CloseAsync();
+			Console.WriteLine("Bad SQL query:");
+			Console.WriteLine(ex.Message);
+			return new Dictionary<string, Dictionary<string, double>>();
+		}
+
+		Dictionary<string, Dictionary<string, double>> locations = new();		
+
+		/*
+		 
+			The returned data will look like this:
+
+			{
+				"device-name" : {
+					"latitude": 23.23...,
+					"longitude": 25.323,
+				}
+			}
+		 
+		 */
+
+		while (reader.Read())
+		{
+
+			string device = reader.GetString("device");
+			double latitude = reader.GetDouble("latitude");
+			double longitude = reader.GetDouble("longitude");
+
+			Dictionary<string, double> coordinates = new();
+
+			coordinates.Add("latitude", latitude);
+			coordinates.Add("longitude", longitude);
+			try
+			{
+				locations.Add(device, coordinates);
+			} catch (Exception ex)
+            {
+				Console.WriteLine(ex.Message);
+				Console.WriteLine(string.Format("Locations: {0}", locations));
+            }
+		}
+
+		// Make sure to close connection, otherwise next request will fail when opening 
+		await connection.CloseAsync();
+
+		return locations;
+	}
+
 }
