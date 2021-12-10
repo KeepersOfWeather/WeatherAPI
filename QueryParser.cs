@@ -69,7 +69,7 @@ public class QueryParser
 
 			SensorData sensorData;
 
-			if (metadata.DeviceID.StartsWith("py"))
+			if (metadata.DeviceID.Contains("py"))
 			{
 				// PyComs only have temp, pressure and light in a logarithmic scale
 				sensorData = new(
