@@ -34,102 +34,112 @@ public class QueryParser
 		}
 
 		List<WeatherPoint> weatherPoints = new();
-
-		while (reader.Read())
+		try
 		{
-			Metadata metadata = new(
-				reader.GetDateTime("timestamp"),
-				reader.GetString("device"),
-				reader.GetString("application"),
-				reader.GetString("gateway")
-			);
-
-			// Check to see if altitude is missing, if it is we use our overload constructor which leaves altitude null
-
-			var altitude_ordinal = reader.GetOrdinal("altitude");
-
-			Positional positional;
-
-			if (reader.IsDBNull(altitude_ordinal))
+			while (reader.Read())
 			{
-				// We just leave altitude at our default null value
-				positional = new(
-					reader.GetDouble("latitude"),
-					reader.GetDouble("longitude")
+				Metadata metadata = new(
+					reader.GetDateTime("timestamp"),
+					reader.GetString("device"),
+					reader.GetString("application"),
+					reader.GetString("gateway")
 				);
-			}
-			else
-			{ // Also set altitude
-				positional = new(
-					reader.GetDouble("latitude"),
-					reader.GetDouble("longitude"),
-					reader.GetDouble("altitude")
-				);
-			}
 
-			SensorData sensorData;
+				// Check to see if altitude is missing, if it is we use our overload constructor which leaves altitude null
 
-			if (metadata.DeviceID.Contains("py"))
-			{
-				// PyComs only have temp, pressure and light in a logarithmic scale
-				sensorData = new(
-					reader.GetFloat("temperature"),
-					reader.GetFloat("pressure"),
-					reader.GetInt32("light_log_scale")
-				);
-			}
-			else
-			{
-				// This is an LHT device, which supports a lot more data
-				sensorData = new(
-					reader.GetFloat("temperature"),
-					reader.GetFloat("humidity"),
-					reader.GetInt32("light_lux"),
-					reader.GetInt32("battery_status"),
-					reader.GetFloat("battery_voltage"),
-					reader.GetString("work_mode")
+				var altitude_ordinal = reader.GetOrdinal("altitude");
+
+				Positional positional;
+
+				if (reader.IsDBNull(altitude_ordinal))
+				{
+					// We just leave altitude at our default null value
+					positional = new(
+						reader.GetDouble("latitude"),
+						reader.GetDouble("longitude")
 					);
+				}
+				else
+				{ // Also set altitude
+					positional = new(
+						reader.GetDouble("latitude"),
+						reader.GetDouble("longitude"),
+						reader.GetDouble("altitude")
+					);
+				}
+
+				SensorData sensorData;
+
+				if (metadata.DeviceID.Contains("py"))
+				{
+					// PyComs only have temp, pressure and light in a logarithmic scale
+					sensorData = new(
+						reader.GetFloat("temperature"),
+						reader.GetFloat("pressure"),
+						reader.GetInt32("light_log_scale")
+					);
+				}
+				else if (metadata.DeviceID.Contains("lht"))
+				{
+					// This is an LHT device, which supports a lot more data
+					sensorData = new(
+						reader.GetFloat("temperature"),
+						reader.GetFloat("humidity"),
+						reader.GetInt32("light_lux"),
+						reader.GetInt32("battery_status"),
+						reader.GetFloat("battery_voltage"),
+						reader.GetString("work_mode")
+						);
+				}
+				else
+				{
+					Console.Error.WriteLine("Unknown device type in Database: ");
+					return new List<WeatherPoint>();
+				}
+
+
+				// Check if our SNR value is missing, some sensors don't send this?
+				var snr_ordinal = reader.GetOrdinal("snr");
+				TransmissionalData transmissionalData;
+
+				if (reader.IsDBNull(snr_ordinal))
+				{
+					// It is missing, we use an overload constructer which won't initialise the SNR value
+					transmissionalData = new(
+						reader.GetInt32("rssi"),
+						reader.GetInt32("spreading_factor"),
+						reader.GetFloat("consumed_airtime"),
+						reader.GetInt32("bandwidth"),
+						reader.GetInt32("frequency")
+					);
+
+				}
+				else
+				{
+					// It's there
+					transmissionalData = new(
+						reader.GetInt32("rssi"),
+						reader.GetFloat("snr"),
+						reader.GetInt32("spreading_factor"),
+						reader.GetFloat("consumed_airtime"),
+						reader.GetInt32("bandwidth"),
+						reader.GetInt32("frequency")
+					);
+				}
+
+				WeatherPoint weatherPoint = new(
+					metadata,
+					positional,
+					sensorData,
+					transmissionalData
+					);
+
+				weatherPoints.Add(weatherPoint);
 			}
-
-
-			// Check if our SNR value is missing, some sensors don't send this?
-			var snr_ordinal = reader.GetOrdinal("snr");
-			TransmissionalData transmissionalData;
-
-			if (reader.IsDBNull(snr_ordinal))
-			{
-				// It is missing, we use an overload constructer which won't initialise the SNR value
-				transmissionalData = new(
-					reader.GetInt32("rssi"),
-					reader.GetInt32("spreading_factor"),
-					reader.GetFloat("consumed_airtime"),
-					reader.GetInt32("bandwidth"),
-					reader.GetInt32("frequency")
-				);
-
-			}
-			else
-			{
-				// It's there
-				transmissionalData = new(
-					reader.GetInt32("rssi"),
-					reader.GetFloat("snr"),
-					reader.GetInt32("spreading_factor"),
-					reader.GetFloat("consumed_airtime"),
-					reader.GetInt32("bandwidth"),
-					reader.GetInt32("frequency")
-				);
-			}
-
-			WeatherPoint weatherPoint = new(
-				metadata,
-				positional,
-				sensorData,
-				transmissionalData
-				);
-
-			weatherPoints.Add(weatherPoint);
-		}
+		} catch (Exception ex)
+        {
+			throw ex;
+        }
 
 		await connection.CloseAsync();
 
@@ -146,11 +156,17 @@ public class QueryParser
 		}
 		catch (Exception)
 		{
-			// Connection is probably already open, so we should reset connection 
-			await connection.ResetConnectionAsync();
+			if (connection.State == System.Data.ConnectionState.Open)
+			{
+				// Connection is probably already open, so we should reset connection 
+				await connection.ResetConnectionAsync();
+			} else
+            {
+				throw;
+            }
 		}
 
-		MySqlDataReader reader;
+        MySqlDataReader reader;
 
 		try
 		{
