@@ -78,7 +78,7 @@ public class QueryParser
 					reader.GetInt32("light_log_scale")
 				);
 			}
-			else
+			else if (metadata.DeviceID.Contains("lht"))
 			{
 				// This is an LHT device, which supports a lot more data
 				sensorData = new(
@@ -89,7 +89,11 @@ public class QueryParser
 					reader.GetFloat("battery_voltage"),
 					reader.GetString("work_mode")
 					);
-			}
+			} else
+            {
+				Console.Error.WriteLine("Unknown device type in Database: ");
+				return new List<WeatherPoint>();
+            }
 
 
 			// Check if our SNR value is missing, some sensors don't send this?
@@ -146,11 +150,17 @@ public class QueryParser
 		}
 		catch (Exception)
 		{
-			// Connection is probably already open, so we should reset connection 
-			await connection.ResetConnectionAsync();
+			if (connection.State == System.Data.ConnectionState.Open)
+			{
+				// Connection is probably already open, so we should reset connection 
+				await connection.ResetConnectionAsync();
+			} else
+            {
+				throw;
+            }
 		}
 
-		MySqlDataReader reader;
+        MySqlDataReader reader;
 
 		try
 		{

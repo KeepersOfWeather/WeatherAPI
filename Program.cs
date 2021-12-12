@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using WeatherAPI;
 
@@ -39,8 +38,11 @@ var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
 using var connection = new MySqlConnector.MySqlConnection(db_builder.ConnectionString);
 
 app.MapGet("/", async () =>
-{ 
-	/// Retrieves weather info from last 2 hours
+{
+	/// <summary>
+	/// This is our main endpoint at the root of our API
+	/// This endpoint retrieves weather info from all devices from the last 2 hours
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -52,6 +54,9 @@ app.MapGet("/", async () =>
 
 app.MapGet("/hour", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from the last hour
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -63,6 +68,9 @@ app.MapGet("/hour", async () =>
 
 app.MapGet("/today", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from today (the current date)
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -75,6 +83,9 @@ app.MapGet("/today", async () =>
 
 app.MapGet("/yesterday", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from yesterday
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -86,6 +97,9 @@ app.MapGet("/yesterday", async () =>
 
 app.MapGet("/week", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from the last week
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -97,6 +111,9 @@ app.MapGet("/week", async () =>
 
 app.MapGet("/fortnight", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from the last two weeks (also called a fortnight)
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -108,6 +125,9 @@ app.MapGet("/fortnight", async () =>
 
 app.MapGet("/month", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from this month
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -119,6 +139,9 @@ app.MapGet("/month", async () =>
 
 app.MapGet("/year", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from the last year
+	/// </summary>
 	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
@@ -130,6 +153,10 @@ app.MapGet("/year", async () =>
 
 app.MapGet("/on-date/{date}", async (DateTime date) =>
 {
+	/// <summary>
+	/// This endpoint returns all weather data from a specific date
+	/// </summary>
+	/// <param name="date"></param>
 
 	var formattedDate = date.ToString("yyyy-MM-dd");
 
@@ -145,6 +172,11 @@ app.MapGet("/on-date/{date}", async (DateTime date) =>
 app.MapGet("/on-timestamp/{timestamp}", async (DateTime timestamp) =>
 {
 
+	/// <summary>
+	/// This endpoint returns all weather data from a specific timestamp
+	/// </summary>
+	/// <param name="timestamp"></param>
+
 	var formattedDate = timestamp.ToString("yyyy-MM-dd HH:mm:ss");
 
 	var query = string.Format(@"SELECT * FROM metadata
@@ -158,7 +190,11 @@ app.MapGet("/on-timestamp/{timestamp}", async (DateTime timestamp) =>
 
 app.MapGet("/since/{timestamp}", async (DateTime timestamp) =>
 {
-
+	/// <summary>
+	/// This endpoint returns all weather data since a specific timestamp
+	/// </summary>
+	/// <param name="timestamp"></param>
+	
 	var formattedDate = timestamp.ToString("yyyy-MM-dd HH:mm:ss");
 
 	var query = string.Format(@"SELECT * FROM metadata
@@ -172,25 +208,117 @@ app.MapGet("/since/{timestamp}", async (DateTime timestamp) =>
 
 app.MapGet("/devices", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all devices with their id
+	/// This id is used for the /device endpoints
+	/// </summary>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 });
 
 app.MapGet("/gateways", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all gateways
+	/// </summary>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT gateway FROM metadata");
 });
 
 app.MapGet("/applications", async () =>
 {
+	/// <summary>
+	/// This endpoint returns all the things network applications
+	/// </summary>
 	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT application FROM metadata");
+});
+
+app.MapGet("/locations", async () =>
+{
+	/// <summary>
+	/// This endpoint returns cities with sensors in them in the following format:
+	/// city_name: {
+	///		device_id : device_name
+	/// }
+	/// </summary>
+
+
+	if (geocodeAPIKey == null)
+	{
+		var errorDict = new Dictionary<string, Dictionary<string, string>>();
+		var errorMsgs = new Dictionary<string, string>();
+
+		errorMsgs.Add("0", "Missing Google Maps Geocode API Key");
+
+		errorDict.Add("error", errorMsgs);
+		return errorDict;
+	}
+
+	// We use an id mapped to the response the SQL query from /devices would give us
+	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+
+	// Get all devices with their latitude and longitude
+
+	/*
+	   The returned data will look like this:
+
+			{
+				"device-name" : {
+					"latitude": 23.23...,
+					"longitude": 25.323,
+				}
+			}
+	*/
+
+	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
+		connection, @"SELECT DISTINCT device, 
+		latitude, longitude FROM positional
+		INNER JOIN metadata ON metadata.id = positional.id
+		ORDER BY metadata.device DESC");
+
+	// This wil store our device: city entries
+	Dictionary<string, Dictionary<string, string>> citiesWithDevices = new();
+
+	int deviceIndex = 0;
+
+	foreach (var deviceAndLocational in deviceLocations)
+	{
+		// Get location data from google maps api
+		string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceAndLocational.Value["latitude"], deviceAndLocational.Value["longitude"], geocodeAPIKey);
+
+		HttpClient locationRequest = new();
+
+		Stream responseBody = await locationRequest.GetStreamAsync(apiURL);
+
+		GeocodeResponse.Root geoAPIResponse = await JsonSerializer.DeserializeAsync<GeocodeResponse.Root>(responseBody);
+
+		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
+
+		if (!citiesWithDevices.ContainsKey(cityName))
+		{
+			Dictionary<string, string> deviceInfo = new();
+			deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			citiesWithDevices.Add(cityName, deviceInfo);
+		} else
+        {
+			Dictionary<string, string> deviceList = citiesWithDevices[cityName];
+			deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+        }
+
+		deviceIndex++;
+	}
+
+	return citiesWithDevices;
+
 });
 
 app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 {
-	// This endpoints returns device data from the last 24 hours by default
+	/// <summary>
+	/// This endpoint returns device data from the last 24 hours by default
+	/// </summary>
+	/// <param name="timestamp"></param>
 
-    // We use an id mapped to the response the SQL query from /devices would give us
-    Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	// We use an id mapped to the response the SQL query from /devices would give us
+	Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > all_devices.Count()) {
 		// deviceID is out of bounds for our list, return an empty weatherpoint list
@@ -220,8 +348,11 @@ app.MapGet("/device/{deviceID}/location", async (int deviceID) =>
 {
 
 	if (geocodeAPIKey == null)
-    {
-		return new Dictionary<string, string>();
+	{
+		var errorDict = new Dictionary<string, string>();
+
+		errorDict.Add("error", "Missing Google Maps Geocode API Key");
+		return errorDict;
 	}
 
 	// We use an id mapped to the response the SQL query from /devices would give us
@@ -303,7 +434,10 @@ app.MapGet("/devices/locations", async () =>
 
 	if (geocodeAPIKey == null)
 	{
-		return new Dictionary<string, string>();
+		var errorDict = new Dictionary<string, string>();
+
+		errorDict.Add("error", "Missing Google Maps Geocode API Key");
+		return errorDict;
 	}
 
 	// We use an id mapped to the response the SQL query from /devices would give us
