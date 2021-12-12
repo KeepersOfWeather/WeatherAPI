@@ -151,8 +151,11 @@ public class QueryParser
 		/// This function should be used when the SQL query returns strings
 		try
 		{
-			// Try opening
-			await connection.OpenAsync();
+			if (connection.State != System.Data.ConnectionState.Open)
+			{
+				// Try opening
+				await connection.OpenAsync();
+			}
 		}
 		catch (Exception)
 		{
