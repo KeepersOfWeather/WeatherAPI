@@ -2,18 +2,10 @@
 
 public class QueryParser
 {
-    public static async Task<IEnumerable<WeatherPoint>> Parse(MySqlConnector.MySqlConnection connection , string SQLQuery)
+    public static async Task<IEnumerable<WeatherPoint>> Parse(MySqlConnectionStringBuilder dbBuilder, string SQLQuery)
     {
-		try
-		{
-			// Try opening
-			await connection.OpenAsync();
-		} 
-		catch (Exception)
-        {
-			// Connection is probably already open, so we should reset connection 
-			await connection.ResetConnectionAsync();
-		}
+		using var connection = new MySqlConnection(dbBuilder.ConnectionString);
+		await connection.OpenAsync(); 
 
 		MySqlDataReader reader;
 
@@ -146,30 +138,13 @@ public class QueryParser
         return weatherPoints;
 	}
 
-	public async static Task<Dictionary<int, string>> GetDistinctStringColumn(MySqlConnection connection, string SQLQuery)
+	public async static Task<Dictionary<int, string>> GetDistinctStringColumn(MySqlConnectionStringBuilder dbBuilder, string SQLQuery)
     {
 		/// This function should be used when the SQL query returns strings
-		try
-		{
-			if (connection.State != System.Data.ConnectionState.Open)
-			{
-				// Try opening
-				await connection.OpenAsync();
-			}
-		}
-		catch (Exception)
-		{
-			if (connection.State == System.Data.ConnectionState.Open)
-			{
-				// Connection is probably already open, so we should reset connection 
-				await connection.ResetConnectionAsync();
-			} else
-            {
-				throw;
-            }
-		}
+		using var connection = new MySqlConnection(dbBuilder.ConnectionString);
+		await connection.OpenAsync();
 
-        MySqlDataReader reader;
+		MySqlDataReader reader;
 
 		try
 		{
@@ -214,19 +189,10 @@ public class QueryParser
 		return enum_response;
 	}
 
-	public async static Task<float> GetSingleFloatColumn(MySqlConnection connection, string SQLQuery)
+	public async static Task<float> GetSingleFloatColumn(MySqlConnectionStringBuilder dbBuilder, string SQLQuery)
 	{
-		/// This function should be used when the SQL query returns strings
-		try
-		{
-			// Try opening
-			await connection.OpenAsync();
-		}
-		catch (Exception)
-		{
-			// Connection is probably already open, so we should reset connection 
-			await connection.ResetConnectionAsync();
-		}
+		using var connection = new MySqlConnection(dbBuilder.ConnectionString);
+		await connection.OpenAsync();
 
 		MySqlDataReader reader;
 
@@ -266,18 +232,10 @@ public class QueryParser
 		return value;
 	}
 
-	public async static Task<Dictionary<string, Dictionary<string, double>>> GetDevicesLocations(MySqlConnection connection, string SQLQuery) {
+	public async static Task<Dictionary<string, Dictionary<string, double>>> GetDevicesLocations(MySqlConnectionStringBuilder dbBuilder, string SQLQuery) {
 		/// This function should be used when the SQL query returns strings
-		try
-		{
-			// Try opening
-			await connection.OpenAsync();
-		}
-		catch (Exception)
-		{
-			// Connection is probably already open, so we should reset connection 
-			await connection.ResetConnectionAsync();
-		}
+		using var connection = new MySqlConnection(dbBuilder.ConnectionString);
+		await connection.OpenAsync();
 
 		MySqlDataReader reader;
 

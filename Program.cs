@@ -26,7 +26,7 @@ if (geocodeAPIKey == null)
 	Console.WriteLine("Geocode API key not provided, location endpoints will not work.");
 }
 
-var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
+var dbBuilder = new MySqlConnector.MySqlConnectionStringBuilder
 {
     Server = server,
     UserID = userID,
@@ -35,15 +35,13 @@ var db_builder = new MySqlConnector.MySqlConnectionStringBuilder
     Database = database,
 };
 
-using var connection = new MySqlConnector.MySqlConnection(db_builder.ConnectionString);
-
 app.MapGet("/", async () =>
 {
 	/// <summary>
 	/// This is our main endpoint at the root of our API
 	/// This endpoint retrieves weather info from all devices from the last 2 hours
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -57,7 +55,7 @@ app.MapGet("/hour", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from the last hour
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -71,7 +69,7 @@ app.MapGet("/today", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from today (the current date)
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -86,7 +84,7 @@ app.MapGet("/yesterday", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from yesterday
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -100,7 +98,7 @@ app.MapGet("/week", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from the last week
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -114,7 +112,7 @@ app.MapGet("/fortnight", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from the last two weeks (also called a fortnight)
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -128,7 +126,7 @@ app.MapGet("/month", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from this month
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -142,7 +140,7 @@ app.MapGet("/year", async () =>
 	/// <summary>
 	/// This endpoint returns all weather data from the last year
 	/// </summary>
-	return await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	return await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
@@ -166,7 +164,7 @@ app.MapGet("/on-date/{date}", async (DateTime date) =>
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE cast(timestamp as date) = '{0}' ORDER BY timestamp ASC", formattedDate);
 
-	return await QueryParser.Parse(connection, query);
+	return await QueryParser.Parse(dbBuilder, query);
 });
 
 app.MapGet("/on-timestamp/{timestamp}", async (DateTime timestamp) =>
@@ -185,7 +183,7 @@ app.MapGet("/on-timestamp/{timestamp}", async (DateTime timestamp) =>
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE timestamp = '{0}'", formattedDate);
 
-	return await QueryParser.Parse(connection, query);
+	return await QueryParser.Parse(dbBuilder, query);
 });
 
 app.MapGet("/since/{timestamp}", async (DateTime timestamp) =>
@@ -203,7 +201,7 @@ app.MapGet("/since/{timestamp}", async (DateTime timestamp) =>
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE metadata.timestamp BETWEEN '{0}' AND CURRENT_TIMESTAMP ORDER BY timestamp ASC", formattedDate);
 
-	return await QueryParser.Parse(connection, query);
+	return await QueryParser.Parse(dbBuilder, query);
 });
 
 app.MapGet("/devices", async () =>
@@ -212,7 +210,7 @@ app.MapGet("/devices", async () =>
 	/// This endpoint returns all devices with their id
 	/// This id is used for the /device endpoints
 	/// </summary>
-	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	return await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 });
 
 app.MapGet("/gateways", async () =>
@@ -220,7 +218,7 @@ app.MapGet("/gateways", async () =>
 	/// <summary>
 	/// This endpoint returns all gateways
 	/// </summary>
-	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT gateway FROM metadata");
+	return await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT gateway FROM metadata");
 });
 
 app.MapGet("/applications", async () =>
@@ -228,7 +226,7 @@ app.MapGet("/applications", async () =>
 	/// <summary>
 	/// This endpoint returns all the things network applications
 	/// </summary>
-	return await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT application FROM metadata");
+	return await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT application FROM metadata");
 });
 
 app.MapGet("/locations", async () =>
@@ -253,7 +251,7 @@ app.MapGet("/locations", async () =>
 	}
 
 	// We use an id mapped to the response the SQL query from /devices would give us
-	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	// Get all devices with their latitude and longitude
 
@@ -269,7 +267,7 @@ app.MapGet("/locations", async () =>
 	*/
 
 	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
-		connection, @"SELECT DISTINCT device, 
+		dbBuilder, @"SELECT DISTINCT device, 
 		latitude, longitude FROM positional
 		INNER JOIN metadata ON metadata.id = positional.id
 		ORDER BY metadata.device DESC");
@@ -318,7 +316,7 @@ app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 	/// <param name="timestamp"></param>
 
 	// We use an id mapped to the response the SQL query from /devices would give us
-	Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > all_devices.Count()) {
 		// deviceID is out of bounds for our list, return an empty weatherpoint list
@@ -341,7 +339,7 @@ app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 
 	// return query;
 
-	return await QueryParser.Parse(connection, query);
+	return await QueryParser.Parse(dbBuilder, query);
 });
 
 app.MapGet("/device/{deviceID}/location", async (int deviceID) =>
@@ -356,7 +354,7 @@ app.MapGet("/device/{deviceID}/location", async (int deviceID) =>
 	}
 
 	// We use an id mapped to the response the SQL query from /devices would give us
-    Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+    Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > allDevices.Count() || allDevices.Count() == 0) {
 		// deviceID is out of bounds for our list, return an empty weatherpoint list
@@ -372,7 +370,7 @@ app.MapGet("/device/{deviceID}/location", async (int deviceID) =>
 		INNER JOIN metadata ON metadata.id = positional.id
 		WHERE device = '{0}' ORDER BY metadata.timestamp DESC", device);
 
-	Dictionary<string, Dictionary<string, double>> locations = await QueryParser.GetDevicesLocations(connection, query);
+	Dictionary<string, Dictionary<string, double>> locations = await QueryParser.GetDevicesLocations(dbBuilder, query);
 
 	Dictionary<string, double> deviceLocation = locations[device];
 
@@ -398,7 +396,7 @@ app.MapGet("/device/{deviceID}/average-temp", async (int deviceID, DateTime? sin
 	// We use an id mapped to the response from /devices here
 	// You can get the id: device list from /devices, then pass the id for the device you want
 
-	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	var all_devices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > all_devices.Count())
 	{
@@ -420,7 +418,7 @@ app.MapGet("/device/{deviceID}/average-temp", async (int deviceID, DateTime? sin
 		WHERE device = '{0}' 
 		AND timestamp BETWEEN '{1}' AND '{2}'", device, sinceFormatted, untilFormatted);
 
-	float averageTemp = await QueryParser.GetSingleFloatColumn(connection, query);
+	float averageTemp = await QueryParser.GetSingleFloatColumn(dbBuilder, query);
 
 	Dictionary<string, float> returnData = new();
 
@@ -441,11 +439,11 @@ app.MapGet("/devices/locations", async () =>
 	}
 
 	// We use an id mapped to the response the SQL query from /devices would give us
-	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	// Get all devices with their latitude and longitude
 	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
-		connection, @"SELECT DISTINCT device, 
+		dbBuilder, @"SELECT DISTINCT device, 
 		latitude, longitude FROM positional
 		INNER JOIN metadata ON metadata.id = positional.id
 		ORDER BY metadata.device DESC");
@@ -475,7 +473,7 @@ app.MapGet("/devices/locations", async () =>
 
 app.MapGet("/device/{deviceID}/latest", async (int deviceID) =>
 {
-	var all_devices = await QueryParser.GetDistinctStringColumn(connection, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
+	var all_devices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
 
 	if (deviceID > all_devices.Count())
 	{
@@ -491,13 +489,13 @@ app.MapGet("/device/{deviceID}/latest", async (int deviceID) =>
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE device = '{0}' and metadata.id = (SELECT max(id) FROM metadata where device = '{1}')", device, device);
 
-	return await QueryParser.Parse(connection, query);
+	return await QueryParser.Parse(dbBuilder, query);
 });
 
 app.MapGet("/latest", async () =>
 {
 
-	var latest = await QueryParser.Parse(connection, @"SELECT * FROM metadata
+	var latest = await QueryParser.Parse(dbBuilder, @"SELECT * FROM metadata
 		INNER JOIN positional ON metadata.id = positional.id
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
