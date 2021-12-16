@@ -241,12 +241,10 @@ app.MapGet("/locations", async () =>
 
 	if (geocodeAPIKey == null)
 	{
-		var errorDict = new Dictionary<string, Dictionary<string, string>>();
+		var errorDict = new List<Dictionary<string, object>>();
 		var errorMsgs = new Dictionary<string, string>();
 
-		errorMsgs.Add("0", "Missing Google Maps Geocode API Key");
-
-		errorDict.Add("error", errorMsgs);
+		errorMsgs.Add("error", "missing Google Maps Geocode API Key");
 		return errorDict;
 	}
 
@@ -273,7 +271,19 @@ app.MapGet("/locations", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This wil store our device: city entries
-	Dictionary<string, Dictionary<string, string>> citiesWithDevices = new();
+	List<Dictionary<string, object>> citiesWithDevices = new();
+
+	/*
+		[
+			{
+				"City" : "Enschede",
+				"deviceID: py-saxion,
+				"deviceIndex" : 1
+			},
+			...
+		]
+	*/
+
 
 	int deviceIndex = 0;
 
@@ -290,16 +300,23 @@ app.MapGet("/locations", async () =>
 
 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
 
-		if (!citiesWithDevices.ContainsKey(cityName))
-		{
-			Dictionary<string, string> deviceInfo = new();
-			deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-			citiesWithDevices.Add(cityName, deviceInfo);
-		} else
-        {
-			Dictionary<string, string> deviceList = citiesWithDevices[cityName];
-			deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-        }
+		Dictionary<string, object> cityAndDevice = new();
+		cityAndDevice.Add("City", cityName);
+		cityAndDevice.Add("deviceID", deviceAndLocational.Key);
+		cityAndDevice.Add("deviceNumber", deviceIndex);
+
+		citiesWithDevices.Add(cityAndDevice);
+
+		// if (!citiesWithDevices.ContainsKey(cityName))
+		// {
+		// 	Dictionary<string, string> deviceInfo = new();
+		// 	deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+		// 	citiesWithDevices.Add(cityName, deviceInfo);
+		// } else
+        // {
+		// 	Dictionary<string, string> deviceList = citiesWithDevices[cityName];
+		// 	deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+        // }
 
 		deviceIndex++;
 	}
