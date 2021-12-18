@@ -271,7 +271,7 @@ app.MapGet("/locations", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This will store our device: city entries
-	list<Dictionary<string, object>> citiesWithDevices = new List<Dictionary<string, object>>();
+	List<Dictionary<string, object>> citiesWithDevices = new List<Dictionary<string, object>>();
 
 	/*
 		[
