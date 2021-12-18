@@ -241,10 +241,12 @@ app.MapGet("/locations", async () =>
 
 	if (geocodeAPIKey == null)
 	{
-		var errorDict = new List<Dictionary<string, object>>();
+		var errorDict = new Dictionary<string, Dictionary<string, string>>();
 		var errorMsgs = new Dictionary<string, string>();
 
-		errorMsgs.Add("error", "missing Google Maps Geocode API Key");
+		errorMsgs.Add("0", "Missing Google Maps Geocode API Key");
+
+		errorDict.Add("error", errorMsgs);
 		return errorDict;
 	}
 
@@ -255,6 +257,7 @@ app.MapGet("/locations", async () =>
 
 	/*
 	   The returned data will look like this:
+
 			{
 				"device-name" : {
 					"latitude": 23.23...,
@@ -270,19 +273,7 @@ app.MapGet("/locations", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This wil store our device: city entries
-	List<Dictionary<string, object>> citiesWithDevices = new();
-
-	/*
-		[
-			{
-				"City" : "Enschede",
-				"deviceID: py-saxion,
-				"deviceIndex" : 1
-			},
-			...
-		]
-	*/
-
+	Dictionary<string, Dictionary<string, string>> citiesWithDevices = new();
 
 	int deviceIndex = 0;
 
@@ -299,23 +290,16 @@ app.MapGet("/locations", async () =>
 
 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
 
-		Dictionary<string, object> cityAndDevice = new();
-		cityAndDevice.Add("City", cityName);
-		cityAndDevice.Add("deviceID", deviceAndLocational.Key);
-		cityAndDevice.Add("deviceNumber", deviceIndex);
-
-		citiesWithDevices.Add(cityAndDevice);
-
-		// if (!citiesWithDevices.ContainsKey(cityName))
-		// {
-		// 	Dictionary<string, string> deviceInfo = new();
-		// 	deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-		// 	citiesWithDevices.Add(cityName, deviceInfo);
-		// } else
-        // {
-		// 	Dictionary<string, string> deviceList = citiesWithDevices[cityName];
-		// 	deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-        // }
+		if (!citiesWithDevices.ContainsKey(cityName))
+		{
+			Dictionary<string, string> deviceInfo = new();
+			deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			citiesWithDevices.Add(cityName, deviceInfo);
+		} else
+        {
+			Dictionary<string, string> deviceList = citiesWithDevices[cityName];
+			deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+        }
 
 		deviceIndex++;
 	}
@@ -323,170 +307,6 @@ app.MapGet("/locations", async () =>
 	return citiesWithDevices;
 
 });
-
-app.MapGet("/location", async () =>
-{
-	/// <summary>
-	/// This endpoint returns cities with sensors in them in the following format:
-	/// city_name: {
-	///		device_id : device_name
-	/// }
-	/// </summary>
-
-
-	if (geocodeAPIKey == null)
-	{
-		var errorDict = new List<Dictionary<string, object>>();
-		var errorMsgs = new Dictionary<string, string>();
-
-		errorMsgs.Add("error", "missing Google Maps Geocode API Key");
-		return errorDict;
-	}
-
-	// We use an id mapped to the response the SQL query from /devices would give us
-	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
-
-	// Get all devices with their latitude and longitude
-
-	/*
-	   The returned data will look like this:
-			{
-				"device-name" : {
-					"latitude": 23.23...,
-					"longitude": 25.323,
-				}
-			}
-	*/
-
-	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
-		dbBuilder, @"SELECT DISTINCT device, 
-		latitude, longitude FROM positional
-		INNER JOIN metadata ON metadata.id = positional.id
-		ORDER BY metadata.device DESC");
-
-	// This wil store our device: city entries
-	Dictionary<string, string> citiesWithDevices = new();
-
-	/*
-		[
-			{
-				"City" : "Enschede",
-				"deviceID: py-saxion,
-				"deviceIndex" : 1
-			},
-			...
-		]
-	*/
-
-	foreach (var deviceAndLocational in deviceLocations)
-	{
-		// Get location data from google maps api
-		string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceAndLocational.Value["latitude"], deviceAndLocational.Value["longitude"], geocodeAPIKey);
-
-		HttpClient locationRequest = new();
-
-		Stream responseBody = await locationRequest.GetStreamAsync(apiURL);
-
-		GeocodeResponse.Root geoAPIResponse = await JsonSerializer.DeserializeAsync<GeocodeResponse.Root>(responseBody);
-
-		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
-
-		citiesWithDevices.Add(cityName,deviceAndLocational.Key);
-	}
-
-	return citiesWithDevices;
-});
-
-// app.MapGet("/locations", async () =>
-// {
-// 	/// <summary>
-// 	/// This endpoint returns cities with sensors in them in the following format:
-// 	/// city_name: {
-// 	///		device_id : device_name
-// 	/// }
-// 	/// </summary>
-
-
-// 	if (geocodeAPIKey == null)
-// 	{
-// 		var errorDict = new List<Dictionary<string, object>>();
-// 		var errorMsgs = new Dictionary<string, string>();
-
-// 		errorMsgs.Add("error", "missing Google Maps Geocode API Key");
-// 		return errorDict;
-// 	}
-
-// 	// We use an id mapped to the response the SQL query from /devices would give us
-// 	Dictionary<int, string> allDevices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
-
-// 	// Get all devices with their latitude and longitude
-
-// 	/*
-// 	   The returned data will look like this:
-
-// 			{
-// 				"device-name" : {
-// 					"latitude": 23.23...,
-// 					"longitude": 25.323,
-// 				}
-// 			}
-// 	*/
-
-// 	Dictionary<string, Dictionary<string, double>> deviceLocations = await QueryParser.GetDevicesLocations(
-// 		dbBuilder, @"SELECT DISTINCT device, 
-// 		latitude, longitude FROM positional
-// 		INNER JOIN metadata ON metadata.id = positional.id
-// 		ORDER BY metadata.device DESC");
-
-// 	// This will store our device: city entries
-// 	Dictionary<string, List<string>> citiesWithDevices = new();
-
-// 	/*
-// 		[
-// 			"city-name" : {
-// 				"City" : "Enschede",
-// 				"deviceID: py-saxion,
-// 				"deviceIndex" : 1
-// 			},
-// 			...
-// 		]
-// 	*/
-
-
-// 	int deviceIndex = 0;
-
-// 	foreach (var deviceAndLocational in deviceLocations)
-// 	{
-// 		// Get location data from google maps api
-// 		string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceAndLocational.Value["latitude"], deviceAndLocational.Value["longitude"], geocodeAPIKey);
-
-// 		HttpClient locationRequest = new();
-
-// 		Stream responseBody = await locationRequest.GetStreamAsync(apiURL);
-
-// 		GeocodeResponse.Root geoAPIResponse = await JsonSerializer.DeserializeAsync<GeocodeResponse.Root>(responseBody);
-
-// 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
-
-// 		List<string> devices = new List<string>();
-// 		devices.Add(deviceAndLocational.Key);
-// 		citiesWithDevices.Add(cityName,devices);
-		
-// 		// if (!citiesWithDevices.ContainsKey(cityName))
-// 		// {
-// 		// 	List<string> devices = new List<string>();
-// 		// 	devices.Add(deviceAndLocational.Key);
-// 		// 	citiesWithDevices.Add(cityName,devices);
-// 		// } else
-//         // {
-// 		// 	citiesWithDevices[cityName].Add(deviceAndLocational.Key);
-//         // }
-// 		deviceIndex++;
-// 	}
-
-// 	return citiesWithDevices;
-
-// });
 
 app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 {
