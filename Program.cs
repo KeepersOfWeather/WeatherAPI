@@ -270,13 +270,12 @@ app.MapGet("/locations", async () =>
 		INNER JOIN metadata ON metadata.id = positional.id
 		ORDER BY metadata.device DESC");
 
-	// This wil store our device: city entries
-	Dictionary<string,Dictionary<string, object>> citiesWithDevices = new();
+	// This will store our device: city entries
+	Dictionary<string, Dictionary<string, object>> citiesWithDevices = new Dictionary<string, Dictionary<string, object>>();
 
 	/*
 		[
-			"city_name"
-			{
+			"city-name" : {
 				"City" : "Enschede",
 				"deviceID: py-saxion,
 				"deviceIndex" : 1
@@ -314,7 +313,7 @@ app.MapGet("/locations", async () =>
 			citiesWithDevices.Add(cityName,cityAndDevice);
 		} else
         {
-			citiesWithDevices[cityName].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			citiesWithDevices[cityName][cityName].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
         }
 
 		
