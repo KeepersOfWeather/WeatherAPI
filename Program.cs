@@ -308,12 +308,12 @@ app.MapGet("/locations", async () =>
 
 			Dictionary<string, object> cityAndDevice = new();
 			cityAndDevice.Add("City", cityName);
-			cityAndDevice.Add("deviceID"+Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			cityAndDevice.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
 			//cityAndDevice.Add("deviceNumber", deviceIndex);
 			citiesWithDevices.Add(cityAndDevice);
 		} else
         {
-			citiesWithDevices[cityName].Add("deviceID"+Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			citiesWithDevices[cityName].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
         }
 
 		
