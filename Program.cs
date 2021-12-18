@@ -271,10 +271,11 @@ app.MapGet("/locations", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This wil store our device: city entries
-	List<Dictionary<string, object>> citiesWithDevices = new();
+	Dictionary<string,Dictionary<string, object>> citiesWithDevices = new();
 
 	/*
 		[
+			"city_name"
 			{
 				"City" : "Enschede",
 				"deviceID: py-saxion,
@@ -310,11 +311,10 @@ app.MapGet("/locations", async () =>
 			cityAndDevice.Add("City", cityName);
 			cityAndDevice.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
 			//cityAndDevice.Add("deviceNumber", deviceIndex);
-			citiesWithDevices.Add(cityAndDevice);
+			citiesWithDevices.Add(cityName,cityAndDevice);
 		} else
         {
-			int index = citiesWithDevices.IndexOf(cityName);
-			citiesWithDevices[index].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			citiesWithDevices[cityName].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
         }
 
 		
