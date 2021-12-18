@@ -313,7 +313,8 @@ app.MapGet("/locations", async () =>
 			citiesWithDevices.Add(cityAndDevice);
 		} else
         {
-			citiesWithDevices[cityName].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			int index = citiesWithDevices.IndexOf(cityName);
+			citiesWithDevices[index].Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
         }
 
 		
