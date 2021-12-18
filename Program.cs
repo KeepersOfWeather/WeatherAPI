@@ -300,17 +300,19 @@ app.MapGet("/locations", async () =>
 
 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
 
-		if (!citiesWithDevices.ContainsKey(cityName))
-		{
-			List<string> devices = new List<string>();
-			devices.Add(deviceAndLocational.Key);
-			citiesWithDevices.Add(cityName,devices);
-		} else
-        {
-			citiesWithDevices[cityName].Add(deviceAndLocational.Key);
-        }
-
+		List<string> devices = new List<string>();
+		devices.Add(deviceAndLocational.Key);
+		citiesWithDevices.Add(cityName,devices);
 		
+		// if (!citiesWithDevices.ContainsKey(cityName))
+		// {
+		// 	List<string> devices = new List<string>();
+		// 	devices.Add(deviceAndLocational.Key);
+		// 	citiesWithDevices.Add(cityName,devices);
+		// } else
+        // {
+		// 	citiesWithDevices[cityName].Add(deviceAndLocational.Key);
+        // }
 		deviceIndex++;
 	}
 
