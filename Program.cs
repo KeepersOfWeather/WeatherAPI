@@ -300,24 +300,23 @@ app.MapGet("/locations", async () =>
 
 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
 
-		Dictionary<string, object> cityAndDevice = new();
-		cityAndDevice.Add("City", cityName);
-		cityAndDevice.Add("deviceID", deviceAndLocational.Key);
-		cityAndDevice.Add("deviceNumber", deviceIndex);
+		if (!citiesWithDevices.ContainsKey(cityName))
+		{
+			// Dictionary<string, string> deviceInfo = new();
+			// deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			// citiesWithDevices.Add(cityName, deviceInfo);
 
-		citiesWithDevices.Add(cityAndDevice);
+			Dictionary<string, object> cityAndDevice = new();
+			cityAndDevice.Add("City", cityName);
+			cityAndDevice.Add("deviceID"+Convert.ToString(deviceIndex), deviceAndLocational.Key);
+			//cityAndDevice.Add("deviceNumber", deviceIndex);
+			citiesWithDevices.Add(cityAndDevice);
+		} else
+        {
+			citiesWithDevices[cityName].Add("deviceID"+Convert.ToString(deviceIndex), deviceAndLocational.Key);
+        }
 
-		// if (!citiesWithDevices.ContainsKey(cityName))
-		// {
-		// 	Dictionary<string, string> deviceInfo = new();
-		// 	deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-		// 	citiesWithDevices.Add(cityName, deviceInfo);
-		// } else
-        // {
-		// 	Dictionary<string, string> deviceList = citiesWithDevices[cityName];
-		// 	deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-        // }
-
+		
 		deviceIndex++;
 	}
 
