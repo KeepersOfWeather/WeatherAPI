@@ -365,7 +365,7 @@ app.MapGet("/location", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This wil store our device: city entries
-	Dictionary<string, string> citiesWithDevices = new Dictionary<string, string>();
+	Dictionary<string, string> citiesWithDevices = new();
 
 	/*
 		[
