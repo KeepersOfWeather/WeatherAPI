@@ -365,7 +365,7 @@ app.MapGet("/location", async () =>
 		ORDER BY metadata.device DESC");
 
 	// This wil store our device: city entries
-	Dictionary<string, string> citiesWithDevices = new();
+	Dictionary<string, string> citiesWithDevices = new Dictionary<string, string>();
 
 	/*
 		[
@@ -377,9 +377,6 @@ app.MapGet("/location", async () =>
 			...
 		]
 	*/
-
-
-	int deviceIndex = 0;
 
 	foreach (var deviceAndLocational in deviceLocations)
 	{
@@ -395,23 +392,9 @@ app.MapGet("/location", async () =>
 		string cityName = geoAPIResponse.results[0].address_components[3].short_name.Split(" ")[0];
 
 		citiesWithDevices.Add(cityName,deviceAndLocational.Key);
-
-		// if (!citiesWithDevices.ContainsKey(cityName))
-		// {
-		// 	Dictionary<string, string> deviceInfo = new();
-		// 	deviceInfo.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-		// 	citiesWithDevices.Add(cityName, deviceInfo);
-		// } else
-        // {
-		// 	Dictionary<string, string> deviceList = citiesWithDevices[cityName];
-		// 	deviceList.Add(Convert.ToString(deviceIndex), deviceAndLocational.Key);
-        // }
-
-		deviceIndex++;
 	}
 
-	return citiesWithDevices;
-
+	return await citiesWithDevices;
 });
 
 // app.MapGet("/locations", async () =>
