@@ -394,7 +394,7 @@ app.MapGet("/location", async () =>
 		citiesWithDevices.Add(cityName,deviceAndLocational.Key);
 	}
 
-	return await citiesWithDevices;
+	return citiesWithDevices;
 });
 
 // app.MapGet("/locations", async () =>
