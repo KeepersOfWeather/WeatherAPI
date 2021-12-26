@@ -560,10 +560,10 @@ app.MapGet("/trans", async () =>
 {
 
 	var trans = await QueryParser.Parse(dbBuilder, 
-		@"SELECT DISTINCT device, snr, rssi FROM metadata
-		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		GROUP BY device
-		ORDER BY metadata.id DESC");
+		@"SELECT device, snr, rssi, MAX(metadata.id) as id, MAX(timestamp) as collected
+		FROM transmissional_data, metadata 
+		WHERE metadata.id = transmissional_data.id
+		GROUP BY device");
 
 	return trans;
 });
@@ -572,10 +572,10 @@ app.MapGet("/battery", async () =>
 {
 
 	var bat = await QueryParser.Parse(dbBuilder, 
-		@"SELECT DISTINCT device, battery_voltage FROM metadata
-		INNER JOIN sensor_data ON metadata.id = sensor_data.id
-		GROUP BY device
-		ORDER BY metadata.id DESC");
+		@"SELECT device, battery_voltage, MAX(metadata.id) as id, MAX(timestamp) as collected
+		FROM sensor_data, metadata 
+		WHERE metadata.id = sensor_data.id
+		GROUP BY device");
 
 	return bat;
 });
