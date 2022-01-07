@@ -342,7 +342,7 @@ app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 	return await QueryParser.Parse(dbBuilder, query);
 });
 
-app.MapGet("/initDevice/{deviceID}", async(int deviceID, string? span) =>
+app.MapGet("/initDevice/{deviceID}", async(int deviceID, DateTime? since, DateTime? till) =>
 {
 	// We use an id mapped to the response the SQL query from /devices would give us
 	Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
@@ -354,22 +354,22 @@ app.MapGet("/initDevice/{deviceID}", async(int deviceID, string? span) =>
 
 	var device = all_devices[deviceID];
 
-	string[] times = span.Split('\t');
+	// string[] times = span.Split('\t');
 
-	string since = times[0];
-	string till = times[1];
-	// // in case since parameter is null, return last 24 hours
-	// DateTime assuredSince = ?? DateTime.UtcNow.AddHours(-24);
-	// var formattedSince = assuredSince.ToString("yyyy-MM-dd HH:mm:ss");
-	// // in case since parameter is null, return last 24 hours
-	// DateTime assuredtill = till ?? DateTime.UtcNow;
-	// var formattedTill = assuredtill.ToString("yyyy-MM-dd HH:mm:ss");
+	// string since = times[0];
+	// string till = times[1];
+	// in case since parameter is null, return last 24 hours
+	DateTime assuredSince = ?? DateTime.UtcNow.AddHours(-24);
+	var formattedSince = assuredSince.ToString("yyyy-MM-dd HH:mm:ss");
+	// in case since parameter is null, return last 24 hours
+	DateTime assuredtill = till ?? DateTime.UtcNow;
+	var formattedTill = assuredtill.ToString("yyyy-MM-dd HH:mm:ss");
 
 	var query = string.Format(
 		@"SELECT metadata.timestamp, metadata.device, transmissional_data.snr, sensor_data.temperature, sensor_data.humidity, sensor_data.pressure, sensor_data.light_lux, sensor_data.light_log_scale, sensor_data.battery_voltage FROM metadata
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE metadata.device = {0} AND metadata.timestamp BETWEEN {1} AND {2} ORDER BY timestamp ASC", device, since, till);
+		WHERE metadata.device = {0} AND metadata.timestamp BETWEEN {1} AND {2} ORDER BY timestamp ASC", device, formattedSince, formattedTill);
 
 	return await QueryParser.Parse(dbBuilder, query);
 });
