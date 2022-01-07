@@ -342,7 +342,7 @@ app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 	return await QueryParser.Parse(dbBuilder, query);
 });
 
-app.MapGet("/initDevice/{deviceID}", async(int deviceID, string? span) =>
+app.MapGet("/initDevice/{deviceID}", async(int deviceID, string span) =>
 {
 	// We use an id mapped to the response the SQL query from /devices would give us
 	Dictionary<int, string> all_devices = await QueryParser.GetDistinctStringColumn(dbBuilder, @"SELECT DISTINCT device FROM metadata ORDER BY device DESC");
