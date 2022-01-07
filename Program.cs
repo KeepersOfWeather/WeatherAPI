@@ -354,10 +354,10 @@ app.MapGet("/initDevice/{deviceID}", async(int deviceID, string span) =>
 
 	var device = all_devices[deviceID];
 
-	let string[] times = span.Split('\t');
+	string[] times = span.Split('\t');
 
-	let string since = times[0];
-	let string till = times[1];
+	string since = times[0];
+	string till = times[1];
 	// // in case since parameter is null, return last 24 hours
 	// DateTime assuredSince = ?? DateTime.UtcNow.AddHours(-24);
 	// var formattedSince = assuredSince.ToString("yyyy-MM-dd HH:mm:ss");
