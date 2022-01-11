@@ -30,12 +30,26 @@ public class QueryParser
 		{
 			while (reader.Read())
 			{
-				Metadata metadata = new(
+				if (reader.IsDBNull(reader.GetOrdinal("application")))
+				{
+					// We just leave application at our default null value
+					Metadata metadata = new(
+						reader.GetDateTime("timestamp"),
+						reader.GetString("device"),
+						"unknown",
+						reader.GetString("gateway")
+					);
+				}
+				else
+				{
+					Metadata metadata = new(
 					reader.GetDateTime("timestamp"),
 					reader.GetString("device"),
 					reader.GetString("application"),
 					reader.GetString("gateway")
 				);
+				}
+				
 
 				// Check to see if altitude is missing, if it is we use our overload constructor which leaves altitude null
 
