@@ -338,6 +338,8 @@ app.MapGet("/device/{deviceID}", async(int deviceID, DateTime? since) =>
 		WHERE device = '{0}' AND metadata.timestamp BETWEEN '{1}' AND CURRENT_TIMESTAMP ORDER BY timestamp ASC", device, formattedTimestamp);
 
 	// return query;
+	Console.WriteLine("Tried device Query: ");
+	Console.WriteLine(query);
 
 	return await QueryParser.Parse(dbBuilder, query);
 });
@@ -371,7 +373,7 @@ app.MapGet("/initDevice/{deviceID}", async(int deviceID, DateTime? since, DateTi
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
 		WHERE metadata.device = {0} AND metadata.timestamp BETWEEN {1} AND {2} ORDER BY timestamp ASC", device, formattedSince, formattedTill);
 
-	Console.WriteLine("Tried Query: ");
+	Console.WriteLine("Tried initDevice Query: ");
 	Console.WriteLine(query);
 
 	return await QueryParser.Parse(dbBuilder, query);
