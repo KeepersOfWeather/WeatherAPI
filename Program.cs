@@ -371,7 +371,7 @@ app.MapGet("/initDevice/{deviceID}", async(int deviceID, DateTime? since, DateTi
 		@"SELECT metadata.timestamp, metadata.device, transmissional_data.snr, sensor_data.temperature, sensor_data.humidity, sensor_data.pressure, sensor_data.light_lux, sensor_data.light_log_scale, sensor_data.battery_voltage FROM metadata
 		INNER JOIN sensor_data ON metadata.id = sensor_data.id
 		INNER JOIN transmissional_data ON metadata.id = transmissional_data.id
-		WHERE metadata.device = {0} AND metadata.timestamp BETWEEN {1} AND {2} ORDER BY timestamp ASC", device, formattedSince, formattedTill);
+		WHERE metadata.device = {0} AND metadata.timestamp BETWEEN '{1}' AND '{2}' ORDER BY timestamp ASC", device, formattedSince, formattedTill);
 
 	Console.WriteLine("Tried initDevice Query: ");
 	Console.WriteLine(query);
