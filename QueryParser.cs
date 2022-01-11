@@ -30,10 +30,12 @@ public class QueryParser
 		{
 			while (reader.Read())
 			{
+				Metadata metadata;
+				
 				if (reader.IsDBNull(reader.GetOrdinal("application")))
 				{
 					// We just leave application at our default null value
-					Metadata metadata = new(
+					metadata = new(
 						reader.GetDateTime("timestamp"),
 						reader.GetString("device"),
 						"unknown",
@@ -42,7 +44,7 @@ public class QueryParser
 				}
 				else
 				{
-					Metadata metadata = new(
+					metadata = new(
 					reader.GetDateTime("timestamp"),
 					reader.GetString("device"),
 					reader.GetString("application"),
