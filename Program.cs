@@ -360,10 +360,10 @@ app.MapGet("/initDevice/{deviceID}", async(int deviceID, DateTime? since, DateTi
 
 	// string since = times[0];
 	// string till = times[1];
-	// in case since parameter is null, return last 24 hours
-	DateTime assuredSince = since ?? DateTime.UtcNow.AddHours(-24);
+	// in case since parameter is null, return last 2 hours
+	DateTime assuredSince = since ?? DateTime.UtcNow.AddHours(-2);
 	var formattedSince = assuredSince.ToString("yyyy-MM-dd HH:mm:ss");
-	// in case since parameter is null, return last 24 hours
+	// in case till parameter is null, return now
 	DateTime assuredtill = till ?? DateTime.UtcNow;
 	var formattedTill = assuredtill.ToString("yyyy-MM-dd HH:mm:ss");
 
