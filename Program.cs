@@ -280,7 +280,9 @@ app.MapGet("/locations", async () =>
 	foreach (var deviceAndLocational in deviceLocations)
 	{
 		// Get location data from google maps api
-		string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", deviceAndLocational.Value["latitude"], deviceAndLocational.Value["longitude"], geocodeAPIKey);
+		string apiURL = string.Format("https://maps.googleapis.com/maps/api/geocode/json?latlng={0},{1}&key={2}", 
+					      deviceAndLocational.Value["latitude"], deviceAndLocational.Value["longitude"], 
+					      geocodeAPIKey);
 
 		HttpClient locationRequest = new();
 
